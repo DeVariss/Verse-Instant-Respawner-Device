@@ -26,18 +26,20 @@ instant_respawners_module<public> := module:
 
         OnBegin<override>()<suspends>:void =
             Playspace := GetPlayspace()
+            Players := Playspace.GetPlayers()
             InstantRespawnerBuilder := MakeInstantRespawnerBuilder(Playspace, Teleporter_Settings)
-            HandleEliminationSettings(InstantRespawnerBuilder)
+            HandleEliminationSettings(InstantRespawnerBuilder, Players)
             HandleChannels(InstantRespawnerBuilder)
 
-        HandleEliminationSettings<private>(InstantRespawnerBuilder:instant_respawner_builder):void =
+        HandleEliminationSettings<private>(InstantRespawnerBuilder:instant_respawner_builder, Players:[]player):void =
             if (EliminationSettings := Elimination_Settings?):
                 EliminationInstantRespawner := InstantRespawnerBuilder.MakeEliminationInstantRespawner(EliminationSettings)
-                EliminationInstantRespawner.Initialize()
+                EliminationInstantRespawner.Initialize(Players)
 
         HandleChannels<private>(InstantRespawnerBuilder:instant_respawner_builder):void =
             for (ChannelSettings : Channels):
-                InstantRespawnerBuilder.MakeChannelInstantRespawner(ChannelSettings)
+                ChannelInstantRespawner := InstantRespawnerBuilder.MakeChannelInstantRespawner(ChannelSettings)
+                ChannelInstantRespawner.Initialize()
 
     TeleporterSettingsToolTip<internal><localizes>:message = "Settings for how teleporters function."
     EliminationSettingsToolTip<internal><localizes>:message = "When set players on elimination will be teleported. Opens up the option to allow eliminators to also be teleported."
@@ -109,8 +111,6 @@ instant_respawners_module<public> := module:
                     PlayerAddedEvent := Playspace.PlayerAddedEvent()
                     PlayerRemovedEvent := Playspace.PlayerRemovedEvent()
                 EliminationInstantRespawner.InitializeTeleporterLookup()
-                Players := Playspace.GetPlayers()
-                EliminationInstantRespawner.HandlePlayersOnBuild(Players)
                 return EliminationInstantRespawner
 
             (InstantRespawner:instant_respawner).InitializeTeleporterLookup<private>():void =
@@ -132,7 +132,7 @@ instant_respawners_module<public> := module:
                     set TeamTeleporterLookup[Team] = TeamTeleporter
 
             (Agent:agent).InstantRespawn<protected><final>()<suspends>:void =
-                Sleep(0.0)
+                Sleep(0.1)
                 Agent.Respawn(TeleporterSettings.Respawn_Position, rotation{})
                 if (TeleporterSettings.Random_Teleporter?):
                     Agent.ToRandomTeleporter()
@@ -177,8 +177,9 @@ instant_respawners_module<public> := module:
 
             Initialize<override>(Players:[]player):void =
                 spawn{AwaitPlayersAdded()}
+                HandlePlayersOnInitialization(Players)
 
-            HandlePlayersOnBuild<internal>(Players:[]player):void =
+            HandlePlayersOnInitialization<private>(Players:[]player):void =
                 for (Player : Players):
                     spawn{Player.Await()}
 
