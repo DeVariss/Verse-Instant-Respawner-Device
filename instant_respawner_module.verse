@@ -167,8 +167,8 @@ instant_respawners_module<public> := module:
 
             RespawnAllPlayers<private>():void =
                 Players := Playspace.GetPlayers()
-                    for (Player : Players):
-                        spawn{Player.InstantRespawn()}
+                for (Player : Players):
+                    spawn{Player.InstantRespawn()}
 
         elimination_instant_respawner<public> := class<final><internal>(instant_respawner):
             TeleportEliminator<internal>:logic
